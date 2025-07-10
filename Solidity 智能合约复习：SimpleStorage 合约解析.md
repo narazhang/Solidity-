@@ -1,24 +1,66 @@
-## SimpleStorage 合约解析
+# SimpleStorage 合约学习笔记
 
-## 合约基本信息
+## 合约概述
 
-- **许可证标识符**：SPDX-License-Identifier: MIT
+- **用途**：基础数据存储与检索
+- **版本**：Solidity ^0.8.17
+- **功能**：
+  - 存储/读取单个数字
+  - 管理人员信息（数字 + 名称）
+  - 名称与数字映射查询
 
-- **Solidity 版本**：0.8.19
+## 完整合约代码
 
-## 数据结构定义
+```solidity
+// SPDX-License-Identifier: MIT
 
-### 1. 存储变量
+pragma solidity ^0.8.17;
+
+contract SimpleStorage{
+
+    uint256 public favoriteNumber;
+
+    struct Person{
+        uint256 myFavoriteNumber;
+        string name;
+    }
+
+    Person[] public listOfPeople;
+
+    // 根据对应的键值对 string 找到uint256 zl => 23
+    mapping (string => uint256) public nameToFavoriteNumber;
+
+    function store(uint256 _favoriteNumber) public {
+        favoriteNumber = _favoriteNumber;
+        favoriteNumber = favoriteNumber + 1;
+    }
+
+    function retrieve() public view returns (uint256){
+        return favoriteNumber;
+    }
+
+    function addPerson(string memory _name, uint256 _favoriteNumber) public {
+        listOfPeople.push(Person(_favoriteNumber, _name));
+        nameToFavoriteNumber[_name] = _favoriteNumber;
+    }
+}
+```
+
+## 数据结构详解
+
+### 1. 状态变量
 
 ```solidity
 uint256 public favoriteNumber;
+Person[] public listOfPeople;
+mapping(string => uint256) public nameToFavoriteNumber;
 ```
 
-- 公开的无符号整数类型变量
+- **favoriteNumber**：存储单个数值
+- **listOfPeople**：动态数组，存储 Person 结构体
+- **nameToFavoriteNumber**：字符串到数字的映射
 
-- 可通过合约外部直接访问
-
-### 2. 结构体定义
+### 2. 结构体
 
 ```solidity
 struct Person {
@@ -27,25 +69,11 @@ struct Person {
 }
 ```
 
-- 包含两个成员：
+- 封装人员信息：数字 + 名称
 
-- myFavoriteNumber：无符号整数类型
+## 核心函数
 
-- name：字符串类型
-
-### 3. 动态数组
-
-```solidity
-Person[] public listOfPeople;
-```
-
-- 存储Person结构体的动态数组
-
-- 公开访问器允许外部查看数组内容
-
-## 核心功能函数
-
-### 1. 存储函数
+### 1. 存储数字
 
 ```solidity
 function store(uint256 _favoriteNumber) public {
@@ -54,81 +82,109 @@ function store(uint256 _favoriteNumber) public {
 }
 ```
 
-- **功能**：存储并修改最喜欢的数字
+**操作**：
 
-- **执行流程**：
+- 存储输入数字
+- 将存储值加 1
+- **示例**：`store(23)` → 实际存储 24
 
-1. 将传入值赋给favoriteNumber
-
-1. 将favoriteNumber的值加 1
-
-- **注意**：最终存储的值比传入值大 1
-
-### 2. 检索函数
+### 2. 检索数字
 
 ```solidity
-function retrieve() private view returns (uint256) {
+function retrieve() public view returns (uint256) {
     return favoriteNumber;
 }
 ```
 
-- **功能**：获取当前存储的数字
+**特性**：
 
-- **访问权限**：私有（只能在合约内部调用）
+- `view`修饰符：只读操作，不消耗 gas
+- 返回当前存储的数字
 
-- **状态特性**：纯视图函数（不修改区块链状态）
-
-### 3. 添加人员函数
+### 3. 添加人员
 
 ```solidity
 function addPerson(string memory _name, uint256 _favoriteNumber) public {
     listOfPeople.push(Person(_favoriteNumber, _name));
+    nameToFavoriteNumber[_name] = _favoriteNumber;
 }
 ```
 
-- **功能**：向数组中添加新人员
+**操作**：
 
-- **参数**：
+- 添加人员到数组
+- 建立名称到数字的映射
+- **示例**：`addPerson("Alice", 42)`
+  - `listOfPeople[0]` → Alice, 42
+  - `nameToFavoriteNumber["Alice"]` → 42
 
-- _name：人员姓名（内存中临时存储）
+## 关键语法
 
-- _favoriteNumber：对应的数字
-
-- **实现方式**：使用结构体初始化并添加到数组
-
-## 特殊注释与潜在改进
-
-### 1. 注释掉的代码
+### 1. 动态数组操作
 
 ```solidity
-// uint256[] listofFavoriteNumbers;
-// Person public myFriend = Person(1, "john");
+listOfPeople.push(Person(_favoriteNumber, _name));
 ```
 
-- 可能是开发过程中暂时不需要的代码
+- 使用`push()`方法添加元素
+- 数组长度自动增长
 
-- 可作为后续扩展参考
+### 2. 映射赋值
 
-### 2. 潜在改进建议
+```solidity
+nameToFavoriteNumber[_name] = _favoriteNumber;
+```
 
-- **可见性调整**：retrieve()函数设为私有可能不符合实际需求，建议改为public
+- 类似字典操作，通过键存储值
 
-- **数据验证**：添加输入验证逻辑（如禁止空字符串姓名）
+### 3. 函数修饰符
 
-- **数组操作**：增加按索引查询或删除人员的功能
+- `public`：公开可访问
+- `view`：只读不写
+- `memory`：临时存储字符串参数
 
-- **事件机制**：添加事件记录人员添加操作，便于前端监听
+## 交互示例
 
-## 总结
+### 存储数字：
 
-这个简单合约展示了 Solidity 的基本语法和核心概念：
+```
+store(100)
+retrieve() → 101
+```
 
-- 状态变量的存储与访问
+### 添加人员：
 
-- 结构体与数组的使用
+```
+addPerson("Bob", 7)
+listOfPeople(0) → (7, "Bob")
+nameToFavoriteNumber("Bob") → 7
+```
 
-- 函数的不同可见性和状态特性
+### 组合操作：
 
-- 数据的初始化与操作
+```
+store(5)
+addPerson("Charlie", retrieve())
+nameToFavoriteNumber("Charlie") → 6
+```
 
-通过复习此合约，可以掌握 Solidity 智能合约的基础结构和开发模式。
+## 注意事项
+
+- **数值自动加 1**：`store`函数会修改输入值
+- **映射唯一性**：同名添加会覆盖旧值
+- **存储成本**：添加人员会增加合约存储开销
+- **数组索引**：从 0 开始，动态增长
+
+## 常见问题
+
+**Q**：如何查询特定人员？  
+**A**：使用映射：`nameToFavoriteNumber["Name"]`
+
+**Q**：能否修改已添加人员？  
+**A**：需添加额外函数实现，当前合约不支持
+
+**Q**：映射和数组的区别？  
+**A**：
+
+- 映射：键值对，快速查询
+- 数组：有序集合，支持遍历

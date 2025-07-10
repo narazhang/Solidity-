@@ -1,4 +1,4 @@
-### SimpleStorage 合约解析
+## SimpleStorage 合约解析
 
 ## 合约基本信息
 
